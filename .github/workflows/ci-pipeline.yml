@@ -116,7 +116,7 @@ jobs:
         namespace: ${{ steps.namespace.outputs.namespace }}
         port: 8080
         replicas: 3
-        service-type: LoadBalancer
+        service-type: NodePort
         health-check-path: /health
         health-check-timeout: 300
         resource-limits-cpu: 500m
