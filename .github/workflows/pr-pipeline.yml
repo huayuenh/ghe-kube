@@ -16,7 +16,12 @@ on:
 
 # Environment variables available to all jobs and steps in this workflow
 env:
+  env:
   GITHUB_SHA: ${{ github.sha }}
+  IBMCLOUD_API_KEY: ${{ secrets.IBMCLOUD_API_KEY }}
+  IBMCLOUD_REGION: ${{ vars.IBMCLOUD_REGION }}
+  ICR_NAMESPACE: ${{ vars.ICR_NAMESPACE }}
+  REGISTRY_HOSTNAME: ${{ vars.ICR_REGION }}
   IMAGE_NAME: ${{ vars.IMAGE_NAME }}
 jobs:
   pr-pipeline:
@@ -31,7 +36,7 @@ jobs:
     
     - id: set-commit-status-start
       name: Set up initial commit status
-      uses: huayuenh/ghacatalog/set-commit-status@main
+      uses: huayuenh/ghe-commit-status@main
       with:
         github_token: ${{ github.token }}
         state: "pending"
@@ -47,18 +52,40 @@ jobs:
         npm install
         npm run test-unit
 
-    - id: build-image
-      name: Build image
-      uses: redhat-actions/buildah-build@v2
+    - name: Build Docker image
+      id: build
+      uses: huayuenh/ghe-docker-build@main
       with:
-        image: "${{ vars.ICR_REGION }}/${{ vars.ICR_NAMESPACE }}/${{ vars.IMAGE_NAME }}"
-        tags: "${{ github.sha }}"
-        containerfiles: |
-          ./Dockerfile
+        context: .
+        dockerfile: Dockerfile
+        image-name: myapp:${{ steps.image-tag.outputs.tag }}
+        build-args: |
+          VERSION=${{ steps.image-tag.outputs.tag }}
+          BUILD_DATE=${{ github.event.head_commit.timestamp }}
+          COMMIT_SHA=${{ github.sha }}
+        labels: |
+          org.opencontainers.image.title=MyApp
+          org.opencontainers.image.version=${{ steps.image-tag.outputs.tag }}
+          org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
+          org.opencontainers.image.revision=${{ github.sha }}
+          org.opencontainers.image.source=${{ github.repositoryUrl }}
+        no-cache: false
+        pull: true
+    
+    - name: Push to IBM Cloud Container Registry
+      id: push
+      uses: huayuenh/ghe-icr@main
+      with:
+        apikey: ${{ secrets.IBMCLOUD_API_KEY }}
+        image: ${{ env.REGISTRY_HOSTNAME }}/${{ env.ICR_NAMESPACE }}/myapp:${{ steps.image-tag.outputs.tag }}
+        local-image: ${{ steps.build.outputs.image-name }}
+        action: push
+        scan: true
+        region: ${{ env.IBMCLOUD_REGION }}
 
     - id: set-commit-status-fail
       if: ${{ failure() }}
-      uses: huayuenh/ghacatalog/set-commit-status@main
+      uses: huayuenh/ghe-commit-status@main
       with:
         github_token: ${{ github.token }}
         state: "failure"
@@ -70,7 +97,7 @@ jobs:
 
     - id: set-commit-status-success
       if: ${{ success() }}
-      uses: huayuenh/ghacatalog/set-commit-status@main
+      uses: huayuenh/ghe-commit-status@main
       with:
         github_token: ${{ github.token }}
         state: "success"
