@@ -9,15 +9,14 @@
 name: Build and Deploy to IKS
 
 on:
+  push:
+    branches: [ "main" ]
   workflow_dispatch:
-    branches: [ main ]
     inputs:
       app-name:
         description: 'Application name (defaults to repository name)'
         required: false
         type: string
-  push:
-    branches: [ "main" ]
 
 # Environment variables available to all jobs and steps in this workflow
 env:
