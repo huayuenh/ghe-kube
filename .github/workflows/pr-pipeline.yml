@@ -21,7 +21,6 @@ on:
 
 # Environment variables available to all jobs and steps in this workflow
 env:
-  env:
   GITHUB_SHA: ${{ github.sha }}
   IBMCLOUD_API_KEY: ${{ secrets.IBMCLOUD_API_KEY }}
   IBMCLOUD_REGION: ${{ vars.IBMCLOUD_REGION }}
