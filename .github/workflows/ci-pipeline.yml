@@ -124,7 +124,7 @@ jobs:
         echo "#### Build Information" >> $GITHUB_STEP_SUMMARY
         echo "**Image Name:** \`${{ steps.build.outputs.image-name }}\`" >> $GITHUB_STEP_SUMMARY
         echo "**Image ID:** \`${{ steps.build.outputs.image-id }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "**Registry:** \`${{ env.REGISTRY_HOSTNAME }}/${{ env.ICR_NAMESPACE }}/${{ steps.build.outputs.image-name }}`" >> $GITHUB_STEP_SUMMARY
+        echo "**Registry:** \`${{ env.REGISTRY_HOSTNAME }}/${{ env.ICR_NAMESPACE }}/${{ steps.build.outputs.image-name }}\`" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "#### Deployment Information" >> $GITHUB_STEP_SUMMARY
         echo "**Status:** ${{ steps.deploy.outputs.deployment-status }}" >> $GITHUB_STEP_SUMMARY
