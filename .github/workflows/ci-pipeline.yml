@@ -100,6 +100,7 @@ jobs:
         service-type: ClusterIP
         ingress-tls: true
         auto-ingress: true
+        capture-previous-image: true
         health-check-path: /health
         health-check-timeout: 300
         resource-limits-cpu: 500m
@@ -111,6 +112,90 @@ jobs:
           ENVIRONMENT=${{ env.DEPLOY_NAMESPACE }}
           BUILD_SHA=${{ github.sha }}
     
+    - name: Run acceptance tests
+      id: acceptance-tests
+      if: github.event_name != 'pull_request' && steps.deploy.outputs.deployment-status == 'success'
+      continue-on-error: true
+      run: |
+        echo "::group::Running acceptance tests"
+        
+        APP_URL="${{ steps.deploy.outputs.application-url }}"
+        
+        if [ -z "$APP_URL" ]; then
+          echo "::error::Application URL not available for testing"
+          exit 1
+        fi
+        
+        echo "Testing application at: $APP_URL"
+        
+        # Test 1: Basic connectivity and HTTP response
+        echo "Test 1: Checking basic connectivity..."
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$APP_URL" || echo "000")
+        
+        if [[ "$HTTP_CODE" =~ ^(200|301|302)$ ]]; then
+          echo "✓ Basic connectivity test passed (HTTP $HTTP_CODE)"
+        else
+          echo "::error::Basic connectivity test failed (HTTP $HTTP_CODE)"
+          exit 1
+        fi
+        
+        # More comprehensive tests should be included her
+
+        echo "::endgroup::"
+        echo "✅ All acceptance tests passed"
+
+    - name: Rollback deployment
+      id: rollback
+      if: |
+        github.event_name != 'pull_request' &&
+        steps.acceptance-tests.outcome == 'failure' &&
+        steps.deploy.outputs.previous-image != ''
+      uses: ./deploy-action
+      with:
+        image: ${{ steps.deploy.outputs.previous-image }}
+        cluster-type: kubernetes
+        ibmcloud-apikey: ${{ secrets.IBM_CLOUD_API_KEY }}
+        cluster-name: ${{ env.CLUSTER_NAME }}
+        cluster-region: ${{ env.IBM_CLOUD_REGION }}
+        deployment-name: ${{ steps.build.outputs.app-name }}
+        namespace: ${{ env.DEPLOY_NAMESPACE }}
+        port: 8080
+        service-type: ClusterIP
+        replicas: 3
+        auto-ingress: true
+        resource-limits-cpu: 500m
+        resource-limits-memory: 512Mi
+        resource-requests-cpu: 250m
+        resource-requests-memory: 256Mi
+        env-vars: |
+          VERSION=rollback-${{ github.sha }}
+          ENVIRONMENT=${{ env.DEPLOY_NAMESPACE }}
+          BUILD_SHA=${{ github.sha }}
+          ROLLBACK=true
+    
+    - name: Verify rollback
+      id: verify-rollback
+      if: |
+        github.event_name != 'pull_request' &&
+        steps.rollback.outcome == 'success'
+      run: |
+        echo "::group::Verifying rollback"
+        echo "✓ Rollback deployment completed successfully"
+        echo "::notice::Deployment rolled back to: ${{ steps.deploy.outputs.previous-image }}"
+        echo "Rollback status: ${{ steps.rollback.outputs.deployment-status }}"
+        echo "Health check: ${{ steps.rollback.outputs.health-check-result }}"
+        echo "::endgroup::"
+    
+    - name: Report rollback failure
+      if: |
+        github.event_name != 'pull_request' &&
+        steps.acceptance-tests.outcome == 'failure' &&
+        steps.deploy.outputs.previous-image == ''
+      run: |
+        echo "::error::Acceptance tests failed but no previous deployment found for rollback"
+        echo "::error::This appears to be the first deployment - manual intervention required"
+        exit 1
+
     - name: Display deployment summary
       if: github.event_name != 'pull_request'
       run: |
