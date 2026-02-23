@@ -168,7 +168,7 @@ jobs:
       with:
         image: ${{ steps.deploy.outputs.previous-image }}
         cluster-type: kubernetes
-        ibmcloud-apikey: ${{ secrets.IBM_CLOUD_API_KEY }}
+        ibmcloud-apikey: ${{ secrets.IBMCLOUD_API_KEY }}
         cluster-name: ${{ env.CLUSTER_NAME }}
         cluster-region: ${{ env.IBM_CLOUD_REGION }}
         deployment-name: ${{ steps.app-info.outputs.app-name }}
