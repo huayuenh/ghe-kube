@@ -164,7 +164,7 @@ jobs:
         github.event_name != 'pull_request' &&
         steps.acceptance-tests.outcome == 'failure' &&
         steps.deploy.outputs.previous-image != ''
-      uses: ./deploy-action
+      uses: huayuenh/cluster-service-action@main
       with:
         image: ${{ steps.deploy.outputs.previous-image }}
         cluster-type: kubernetes
