@@ -47,7 +47,7 @@ spec:
   selector:
     app: {{DEPLOYMENT_NAME}}
   ports:
-  - port: 80
+  - port: {{PORT}}
     targetPort: {{PORT}}
     protocol: TCP
     name: http
