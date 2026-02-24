@@ -86,8 +86,6 @@ jobs:
         deployment-name: ${{ github.event.inputs.app-name || github.event.repository.name }}
         namespace: ${{ github.event.inputs.namespace || (github.ref == 'refs/heads/main' && 'production') || (github.ref == 'refs/heads/develop' && 'staging') || 'development' }}
         manifest-template: .k8s/deployment.yaml
-        image-pull-secret: ${{ vars.IMAGE_PULL_SECRET }}
-        version: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || github.sha }}
         env-vars: |
           VERSION=${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || github.sha }}
           ENVIRONMENT=${{ github.event.inputs.namespace || (github.ref == 'refs/heads/main' && 'production') || (github.ref == 'refs/heads/develop' && 'staging') || 'development' }}
