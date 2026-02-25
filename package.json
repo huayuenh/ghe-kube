@@ -25,7 +25,8 @@
     "start-server": "node --max-http-header-size=65535 app.js testApp",
     "stop-server": "killall -SIGINT testApp",
     "test-unit": "jest ./test/unit.test.js",
-    "test-fvt": "jest ./test/fvt.test.js"
+    "test-fvt": "jest ./test/fvt.test.js",
+    "test-acceptance": "bash ./test/acceptance-tests.sh"
   },
   "dependencies": {
     "express": "^4.21.2"

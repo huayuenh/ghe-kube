@@ -91,32 +91,7 @@ jobs:
       if: github.event_name != 'pull_request' && steps.deploy.outputs.deployment-status == 'success'
       continue-on-error: true
       run: |
-        echo "::group::Running acceptance tests"
-        
-        APP_URL="${{ steps.deploy.outputs.application-url }}"
-        
-        if [ -z "$APP_URL" ]; then
-          echo "::error::Application URL not available for testing"
-          exit 1
-        fi
-        
-        echo "Testing application at: $APP_URL"
-        
-        # Test 1: Basic connectivity and HTTP response
-        echo "Test 1: Checking basic connectivity..."
-        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$APP_URL" || echo "000")
-        
-        if [[ "$HTTP_CODE" =~ ^(200|301|302)$ ]]; then
-          echo "✓ Basic connectivity test passed (HTTP $HTTP_CODE)"
-        else
-          echo "::error::Basic connectivity test failed (HTTP $HTTP_CODE)"
-          exit 1
-        fi
-        
-        # More comprehensive tests should be included here
-        
-        echo "::endgroup::"
-        echo "✅ All acceptance tests passed"
+        APP_URL="${{ steps.deploy.outputs.application-url }}" ./test/acceptance-tests.sh
 
     - name: Rollback deployment using Kubernetes native rollback
       id: rollback

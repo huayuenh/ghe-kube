@@ -32,6 +32,12 @@ on:
         type: boolean
         default: true
       
+      acceptance-test-script:
+        description: 'Custom acceptance test script path (defaults to npm run test-acceptance)'
+        required: false
+        type: string
+        default: ''
+      
       auto-rollback:
         description: 'Automatically rollback on failure'
         required: false
@@ -147,11 +153,16 @@ jobs:
         run: |
           echo "Running acceptance tests against: ${{ needs.deploy.outputs.app-url }}"
           
-          # Install dependencies
-          npm install
-          
-          # Run tests
-          APP_URL="${{ needs.deploy.outputs.app-url }}" npm run test-acceptance
+          if [ -n "${{ inputs.acceptance-test-script }}" ]; then
+            # Run custom test script
+            echo "Using custom test script: ${{ inputs.acceptance-test-script }}"
+            APP_URL="${{ needs.deploy.outputs.app-url }}" bash ${{ inputs.acceptance-test-script }}
+          else
+            # Run default npm test
+            echo "Using default npm test-acceptance script"
+            npm install
+            APP_URL="${{ needs.deploy.outputs.app-url }}" npm run test-acceptance
+          fi
         continue-on-error: false
 
   rollback:
